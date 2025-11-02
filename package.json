@@ -5,9 +5,10 @@
     "type": "module",
     "main": "bin/utils.js",
     "scripts": {
-        "prod:build": "esbuild src/main.ts --bundle --minify --platform=node --target=node20 --format=esm --outfile=./bin/utils.js",
+        "build": "esbuild src/main.ts --bundle --minify --platform=node --target=node20 --format=esm --outfile=./bin/utils.js",
         "dev:watch": "esbuild src/main.ts --bundle --platform=node --target=node20 --format=esm --outfile=./bin/utils.js --watch",
-        "dev:start": "node --watch ./bin/utils.js --outPath ../aura"
+        "dev:start": "node --watch ./bin/utils.js --outPath ../aura",
+        "dev": "concurrently \"npm run dev:watch\" \"wait-on bin/utils.js && npm run dev:start\""
     },
     "keywords": [
         "aura",

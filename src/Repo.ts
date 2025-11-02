@@ -1,5 +1,3 @@
-const ARGS = process.argv.slice(2);
-
 export type Repo = {
     name: string;
     url: string;
@@ -13,26 +11,19 @@ class RepoManager {
     public repos: Repo[] = [];
     public targeted: Record<string, Repo[]> = {};
 
-    constructor(repoNames: string[], args: string[] = ARGS) {
+    constructor(repoNames: string[], repoCommands: Record<string, string[]> = {}) {
         this.repos = repoNames.map((repoName) => this.createRepo(repoName));
-        this.setup(args);
+        this.setup(repoCommands);
     }
 
-    setup(args: string[]) {
-        for (let i = 0; i < args.length; i++) {
-            const arg = args[i];
-            if (arg.startsWith("--repo-")) {
-                const command = arg.split("--repo-")[1];
-                this.targeted[command] = [];
-                let j = i + 1;
-                while (j < args.length && !args[j].startsWith("--")) {
-                    const repo = this.repos.find((repo) => repo.asArg === args[j]);
-                    if (repo) {
-                        this.targeted[command].push(repo);
-                    }
-                    j++;
+    setup(repoCommands: Record<string, string[]>) {
+        for (const [command, repoArgs] of Object.entries(repoCommands)) {
+            this.targeted[command] = [];
+            for (const repoArg of repoArgs) {
+                const repo = this.repos.find((repo) => repo.asArg === repoArg);
+                if (repo) {
+                    this.targeted[command].push(repo);
                 }
-                i = j - 1;
             }
         }
     }

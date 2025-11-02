@@ -1,83 +1,99 @@
 import path from "path";
+import REPOS from "../REPOS";
+import ArgumentParser from "./ArgumentParser";
+import { logInfo, showHelp, showVersion } from "./helpers";
 import RepoManager, { type Repo } from "./Repo";
-
-const ARGS = process.argv.slice(2);
-const COMMANDS = ARGS.filter((arg) => arg.startsWith("--"));
-const REPO_COMMANDS = ARGS.filter((arg) => arg.startsWith("--repo-"));
 
 type Context = {
     repos: Repo[];
     targeted: RepoManager["targeted"][string];
-    commands: string[];
     args: string[];
 };
 
-type RepoSetter = (context: Context) => void | Repo[];
+export type RepoHandler = (context: Context) => void | Repo[];
+export type OptionHandler = (value: string) => void;
+export type HelpHandler = () => void;
+export type VersionHandler = () => void;
 
 type OperateParams = {
     repo: Repo;
-    commands: string[];
     args: string[];
 };
 
-export default class Program {
-    private context: Context = { repos: [], targeted: [], commands: COMMANDS, args: ARGS };
+/**
+ *
+ */
+class Program {
+    private context: Context = { repos: [], targeted: [], args: [] };
     public cloneDir: string = process.cwd();
-    public options: Record<string, string> = {};
 
-    constructor(private repoManager: RepoManager) {
+    constructor(private repoManager: RepoManager, private parser: ArgumentParser) {
         this.context.repos = this.repoManager.repos;
-        this.parseOptions();
+        this.context.args = process.argv.slice(2);
     }
 
-    private parseOptions() {
-        for (let i = 0; i < ARGS.length; i++) {
-            const arg = ARGS[i];
-            if (arg.startsWith("--") && !arg.startsWith("--repo-")) {
-                const command = arg.split("--")[1];
-                if (i + 1 < ARGS.length) {
-                    this.options[command] = ARGS[i + 1];
-                    i++; // Skip the next argument as it's the value
-                }
+    when(cmd: string, handler: RepoHandler | OptionHandler): this {
+        // Repository command (starts with --repo-)
+        if (cmd.startsWith("--repo-")) {
+            const commandKey = cmd.replace("--repo-", "");
+            const targeted = this.repoManager.targeted[commandKey];
+            if (targeted && targeted.length > 0) {
+                this.context.targeted = targeted;
+
+                const result = handler as RepoHandler;
+                const updatedRepos = result(this.context) ?? this.context.repos;
+                this.context.repos = updatedRepos;
             }
+            return this;
         }
+
+        // Regular option (other -- flags)
+        if (cmd.startsWith("--")) {
+            const optionKey = cmd.replace(/^--/, "");
+            const value = this.parser.getOption(optionKey);
+            if (value !== undefined) {
+                const result = handler as OptionHandler;
+                result(value);
+            }
+            return this;
+        }
+
+        return this;
     }
 
     setCloneDir(cloneDir: string) {
         this.cloneDir = path.resolve(process.cwd(), cloneDir);
-        console.log(`\x1b[33;1mSetting clone directory to : \x1b[0m${this.cloneDir}`);
-        return this;
-    }
-
-    add(cmd: string | null, repoSetter: RepoSetter): this {
-        const shouldApplyDefault = cmd === null && REPO_COMMANDS.length === 0;
-        const shouldApplyCommand = cmd && COMMANDS.includes(cmd);
-
-        if (!shouldApplyDefault && !shouldApplyCommand) return this;
-
-        const targeted = shouldApplyDefault
-            ? this.repoManager.repos
-            : this.repoManager.targeted[cmd!.replace("--repo-", "")] ?? [];
-        this.context.targeted = targeted;
-
-        const updatedRepos = repoSetter(this.context) ?? this.context.repos;
-        this.context.repos = updatedRepos;
-
-        return this;
-    }
-
-    option(cmd: string, cb: (value: string) => void) {
-        // Extract option key from command (remove -- prefix)
-        const optionKey = cmd.replace(/^--/, "");
-        const value = this.options[optionKey];
-        if (value !== undefined) {
-            cb(value);
-        }
+        logInfo("Setting outDir", this.cloneDir);
         return this;
     }
 
     operate(cb: (params: OperateParams) => void): this {
-        this.context.repos.forEach((repo) => cb({ repo, commands: this.context.commands, args: this.context.args }));
+        if (this.parser.hasFlag("--help") || (!this.parser.hasRepoCommands() && this.parser.isEmpty())) {
+            showHelp();
+            return this;
+        }
+
+        if (this.parser.hasFlag("--version")) {
+            showVersion();
+            return this;
+        }
+
+        logInfo("Operating", `${this.context.repos.length} repositories`);
+        this.context.repos.forEach((repo) => cb({ repo, args: this.context.args }));
         return this;
     }
 }
+
+const parser = new ArgumentParser();
+if (parser.isEmpty()) showHelp();
+
+const repoManager = new RepoManager(REPOS, parser.repoCommands);
+/**
+ * singleton instance of Program
+ */
+export default new Program(repoManager, parser)
+    /**
+     * help and version handlers
+     */
+    .when("--help", showHelp)
+    .when("--version", showVersion);

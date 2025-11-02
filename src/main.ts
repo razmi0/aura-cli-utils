@@ -1,36 +1,30 @@
 import { execSync } from "child_process";
-import REPOS from "../REPOS";
-import Program from "./Program";
-import RepoManager from "./Repo";
+import program, { type OptionHandler, type RepoHandler } from "./Program";
+import { type Repo } from "./Repo";
 
-/**
- * Add your 1t21-aura repository names here in the form "<type>-<name>".
- *
- */
-const program = new Program(new RepoManager(REPOS));
-
-// Apply repo filtering operations (chain in order)
 program
-    .option("--outPath", (value) => {
-        program.setCloneDir(value);
-    })
+    /**
+     * setting clone directory path
+     */
+    .when("--outPath", ((value: string) => program.setCloneDir(value)) as OptionHandler)
     /**
      * Include repositories (filter by targeted repositories)
      */
-    .add("--repo-include", ({ repos, targeted }) => repos.filter((repo) => targeted.some((t) => t.name === repo.name)))
+    .when("--repo-include", (({ repos, targeted }) =>
+        repos.filter((repo: Repo) => targeted.some((t: Repo) => t.name === repo.name))) as RepoHandler)
     /**
      * Exclude repositories (filter by targeted repositories)
      */
-    .add("--repo-exclude", ({ repos, targeted }) => repos.filter((repo) => !targeted.some((t) => t.name === repo.name)))
+    .when("--repo-exclude", (({ repos, targeted }) =>
+        repos.filter((repo: Repo) => !targeted.some((t: Repo) => t.name === repo.name))) as RepoHandler)
     /**
-     * Default behavior (all repositories) - only applies when no repo commands are present
+     * include all repositories
      */
-    .add(null, ({ repos }) => repos)
+    .when("--repo-all", (({ repos }) => repos) as RepoHandler)
     /**
-     * Operate on selected repositories
+     * Operate on filtered repositories
      */
-    .operate(({ repo }) => {
+    .operate(({ repo }: { repo: Repo }) => {
         // repository operations
-        console.log(`\x1b[33;1mCloning repository : \x1b[0m${repo.name}`);
         execSync(`mkdir -p ${program.cloneDir}/${repo.name}`);
     });
