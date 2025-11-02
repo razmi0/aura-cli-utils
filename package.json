@@ -1,0 +1,27 @@
+{
+    "name": "aura-cli-utils",
+    "version": "0.0.0",
+    "description": "Basic CLI for Aura repository management",
+    "type": "module",
+    "main": "bin/utils.js",
+    "scripts": {
+        "prod:build": "esbuild src/main.ts --bundle --minify --platform=node --target=node20 --format=esm --outfile=./bin/utils.js",
+        "dev:watch": "esbuild src/main.ts --bundle --platform=node --target=node20 --format=esm --outfile=./bin/utils.js --watch",
+        "dev:start": "node --watch ./bin/utils.js --outPath ../aura"
+    },
+    "keywords": [
+        "aura",
+        "cli",
+        "utils",
+        "repository",
+        "management",
+        "internal"
+    ],
+    "author": "razmiO",
+    "dependencies": {},
+    "devDependencies": {
+        "esbuild": "^0.19.11",
+        "@types/node": "^20.10.6",
+        "typescript": "^5.3.3"
+    }
+}
