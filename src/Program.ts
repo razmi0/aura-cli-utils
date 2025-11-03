@@ -68,13 +68,20 @@ class Program {
     }
 
     operate(cb: (params: OperateParams) => void): this {
-        if (this.parser.hasFlag("--help") || (!this.parser.hasRepoCommands() && this.parser.isEmpty())) {
+        // Check for help/version flags first - these should exit immediately
+        if (this.parser.hasFlag("--help")) {
             showHelp();
             return this;
         }
 
         if (this.parser.hasFlag("--version")) {
             showVersion();
+            return this;
+        }
+
+        // If no repo commands are provided, show help and exit
+        if (!this.parser.hasRepoCommands()) {
+            showHelp();
             return this;
         }
 
