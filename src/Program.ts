@@ -12,8 +12,6 @@ type Context = {
 
 export type RepoHandler = (context: Context) => void | Repo[];
 export type OptionHandler = (value: string) => void;
-export type HelpHandler = () => void;
-export type VersionHandler = () => void;
 
 type OperateParams = {
     repo: Repo;
