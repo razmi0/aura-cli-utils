@@ -13,6 +13,6 @@
         "isolatedModules": true,
         "noEmit": true
     },
-    "include": ["*.ts", "src/main.ts"],
-    "exclude": ["node_modules"]
+    "include": ["*.ts", "test/test.ts", "test/REPOS.ts"],
+    "exclude": ["node_modules", "bin", "dist"]
 }
