@@ -115,21 +115,22 @@ class Program<Deps extends Record<string, Dependency<any>>> {
      */
     public run(): void {
         let kv = {};
+        let params: Record<string, any> = {};
+
+        this.state.args.forEach((arg) => {
+            if (arg.type === "param" && arg.value) {
+                params[arg.name as keyof typeof params] = arg.value;
+            }
+        });
+
         for (const route of this.state.routes) {
             if (this.isMatch(route.pattern)) {
-                const params = this.state.args.reduce((acc, arg) => {
-                    if (arg.type === "param" && arg.value) {
-                        acc[arg.name] = arg.value;
-                    }
-                    return acc;
-                }, {} as Record<string, any>);
-
                 const ctx: Context<Deps, typeof route.pattern> = {
                     args: this.state.args,
                     deps: this.state.deps,
                     routes: this.state.routes,
                     kv: kv,
-                    params: params as unknown as Record<typeof route.pattern, any>,
+                    params,
                 };
                 const result: ReturnType<typeof route.handler> = route.handler(ctx);
                 if (result) kv = { ...kv, [route.pattern]: result };
