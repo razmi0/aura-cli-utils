@@ -1,28 +1,32 @@
 {
-    "name": "aura-cli-utils",
+    "name": "aura-cli",
     "version": "0.0.0",
-    "description": "Basic CLI for Aura repository management",
+    "description": "Basic CLI for Aura management",
     "type": "module",
-    "main": "bin/utils.js",
+    "main": "bin/index.js",
+    "bin": {
+        "aura-cli": "bin/aura.js"
+    },
+    "author": "razmiO",
     "scripts": {
-        "build": "esbuild src/main.ts --bundle --minify --platform=node --target=node20 --format=esm --outfile=./bin/utils.js",
-        "dev:watch": "esbuild src/main.ts --bundle --platform=node --target=node20 --format=esm --outfile=./bin/utils.js --watch",
-        "dev:start": "node --watch ./bin/utils.js --outPath ../aura",
-        "dev": "concurrently \"npm run dev:watch\" \"wait-on bin/utils.js && npm run dev:start\""
+        "dev": "esbuild src/cli.ts --bundle --platform=node --target=node20 --format=esm --sourcemap --banner:js='#!/usr/bin/env node' --outfile=./bin/aura.js --watch ",
+        "build": "npm run build:peg && npm run build:lib && npm run build:cli",
+        "build:peg": "peggy -o src/parser/index.ts --format es src/parser/rules.peggy",
+        "build:lib": "esbuild src/index.ts --bundle --minify --platform=node --target=node20 --format=esm --sourcemap --outfile=./bin/index.js",
+        "build:cli": "esbuild src/cli.ts --bundle --minify --platform=node --target=node20 --format=esm --sourcemap --banner:js='#!/usr/bin/env node' --outfile=./bin/aura.js"
     },
     "keywords": [
         "aura",
         "cli",
-        "utils",
+        "main",
         "repository",
         "management",
         "internal"
     ],
-    "author": "razmiO",
-    "dependencies": {},
     "devDependencies": {
-        "esbuild": "^0.19.11",
         "@types/node": "^20.10.6",
+        "esbuild": "^0.19.11",
+        "peggy": "^5.0.6",
         "typescript": "^5.3.3"
     }
 }
