@@ -1,15 +1,5 @@
 import { parse } from "./parser";
 
-/**
- * The only interface you will need to implement :
- * - readonly name is a literal string (for type inference)
- * - example: class WhateverService implements Service<"whateverService">
- */
-
-export abstract class Service<Name extends string> {
-    public abstract readonly name: Name;
-}
-
 type ClassMethods<T> = {
     [K in keyof T as T[K] extends Function ? K : never]: T[K];
 };
@@ -26,7 +16,7 @@ type CLIArg = {
 
 type Route<Deps> = {
     pattern: string;
-    callback: (ctx: { args: CLIArg[]; deps: Deps }) => void;
+    handler: (ctx: { args: CLIArg[]; deps: Deps; routes: Route<Deps>[] }) => void;
 };
 
 type DependencyRecord<Arr extends readonly Dependency<any>[]> = {
@@ -64,12 +54,18 @@ class Program<Deps extends Record<string, Dependency<any>>> {
     ) {
         const rawArgs = process.argv.slice(2).join(" ");
 
-        const depsRecord = deps.reduce((acc, dep) => {
-            acc[dep.name] = dep;
-            return acc;
-        }, {} as DependencyRecord<InitializedDeps>);
+        if (!rawArgs) {
+            console.error("No arguments provided <3");
+            process.exit(1);
+        }
 
-        return new Program<DependencyRecord<InitializedDeps>>({
+        type CreatedDeps = DependencyRecord<InitializedDeps>;
+        const depsRecord = deps.reduce((acc, dep) => {
+            acc[dep.name as keyof CreatedDeps] = dep as CreatedDeps[keyof CreatedDeps];
+            return acc;
+        }, {} as CreatedDeps);
+
+        return new Program<CreatedDeps>({
             args: parse(rawArgs, {}) as CLIArg[],
             routes: routes,
             deps: depsRecord,
@@ -78,7 +74,7 @@ class Program<Deps extends Record<string, Dependency<any>>> {
 
     /**
      *
-     * Merge Two Programs
+     * Merge Two Programs (merge the two states and return a new updated Program instance)
      *
      */
 
@@ -87,7 +83,9 @@ class Program<Deps extends Record<string, Dependency<any>>> {
     ): Program<Deps & DependencyRecord<NewDeps>> {
         return new Program<Deps & DependencyRecord<NewDeps>>({
             args: this.state.args,
-            routes: [...this.state.routes, ...instance.state.routes] as Route<Deps & DependencyRecord<NewDeps>>[],
+            routes: [...this.state.routes, ...instance.state.routes] as unknown as Route<
+                Deps & DependencyRecord<NewDeps>
+            >[],
             deps: { ...this.state.deps, ...instance.state.deps } as Deps & DependencyRecord<NewDeps>,
         });
     }
@@ -97,8 +95,8 @@ class Program<Deps extends Record<string, Dependency<any>>> {
      * Add a route to the program
      *
      */
-    public when(pattern: string, handler: (ctx: { args: CLIArg[]; deps: Deps }) => void): this {
-        this.state.routes.push({ pattern, callback: handler });
+    public when(pattern: string, handler: (ctx: { args: CLIArg[]; deps: Deps; routes: Route<Deps>[] }) => void): this {
+        this.state.routes.push({ pattern, handler });
         return this;
     }
 
@@ -113,8 +111,9 @@ class Program<Deps extends Record<string, Dependency<any>>> {
                 const ctx = {
                     args: this.state.args,
                     deps: this.state.deps,
+                    routes: this.state.routes,
                 };
-                route.callback(ctx);
+                route.handler(ctx);
             }
         }
     }

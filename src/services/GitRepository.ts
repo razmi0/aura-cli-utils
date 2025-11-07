@@ -1,10 +1,11 @@
-import { Service } from "../src/program";
-import type { Branch, Repo, TargetUrl } from "./REPOS";
+import type { Branch, Repo, TargetUrl } from "../constants";
+import { ProgramPort } from "../program.port";
+import { REPOS } from "../constants";
 
-class GitRepositoryService implements Service<"repoService"> {
+export default class GitRepositoryService implements ProgramPort<"repoService"> {
     public repos: Repo[] = [];
 
-    constructor(repoUrls: TargetUrl[], public readonly name: "repoService" = "repoService" as const) {
+    constructor(repoUrls: TargetUrl[] = REPOS, public readonly name: "repoService" = "repoService" as const) {
         this.repos = repoUrls.map((repoUrl) => {
             const [url, branch] = repoUrl.split("@");
             const path = url.split("/").pop()?.split(".")[0];
@@ -31,5 +32,3 @@ class GitRepositoryService implements Service<"repoService"> {
         this.repos = this.repos.filter((repo) => repo.path !== path);
     }
 }
-
-export default GitRepositoryService;

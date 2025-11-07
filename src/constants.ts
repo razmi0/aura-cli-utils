@@ -7,7 +7,7 @@ export type Repo = {
     branch: Branch;
 };
 
-export default [
+export const REPOS: TargetUrl[] = [
     "https://github.com/1t21-aura-module-esd.git@main",
     "https://github.com/1t21-aura-module-default-content.git@main",
     "https://github.com/1t21-aura-orchestrator.git@main",
@@ -17,7 +17,7 @@ export default [
     "https://github.com/1t21-aura-library-notification-manager.git@main",
     "https://github.com/1t21-aura-template-html.git@main",
     "https://github.com/1t21-aura-template-react-18.git@main",
-] as TargetUrl[];
+] as const;
 
 /**
  *
