@@ -21,16 +21,29 @@ import { BasicsService, GitRepositoryService } from "./services";
 export function createAuraProgram() {
     return Program.create([new BasicsService(), new GitRepositoryService()])
         .when("--version", ({ deps }) => {
-            deps.$.log(deps.$.version());
+            const { log, version } = deps.$;
+            log(version());
             process.exit(0);
         })
-        .when("help", ({ deps, routes }) => {
-            deps.$.log("Usage: aura-cli <command>");
-            deps.$.log("Available commands:");
+        .when("--help", ({ deps, routes }) => {
+            const { log } = deps.$;
+            log("Usage: aura-cli <command>");
+            log("Available commands:");
             routes.forEach((route) => {
-                deps.$.log(`  ${route.pattern}`);
+                log(`  ${route.pattern}`);
             });
             process.exit(0);
+        })
+        .when("repos", ({ deps, params }) => {
+            const { log } = deps.$;
+
+            console.log(params);
+            log('No repository provided. Example: aura-cli repos:"[repo1,repo2,repo3]"');
+            process.exit(1);
+        })
+        .when("--clone", ({ kv }) => {
+            console.log(kv);
+            return "can be cloned";
         });
 }
 
@@ -38,3 +51,5 @@ export function createAuraProgram() {
 export { default as Program } from "./program";
 export type { ProgramPort } from "./program.port";
 export { BasicsService, GitRepositoryService } from "./services";
+
+// aura-cli repo:"[1t21-aura-module-esd,1t21-aura-orchestrator]"

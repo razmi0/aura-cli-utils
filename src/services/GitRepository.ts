@@ -1,6 +1,6 @@
 import type { Branch, Repo, TargetUrl } from "../constants";
-import { ProgramPort } from "../program.port";
 import { REPOS } from "../constants";
+import { ProgramPort } from "../program.port";
 
 export default class GitRepositoryService implements ProgramPort<"repoService"> {
     public repos: Repo[] = [];
@@ -20,15 +20,8 @@ export default class GitRepositoryService implements ProgramPort<"repoService"> 
         });
     }
 
-    public find(path: string): Repo {
-        const repo = this.repos.find((repo) => repo.path === path);
-        if (!repo) {
-            throw new Error(`Repository ${path} not found`);
-        }
-        return repo;
-    }
-
-    public remove(path: string): void {
-        this.repos = this.repos.filter((repo) => repo.path !== path);
+    // without branch for now
+    public getUrls(reposPaths: string[]): string[] {
+        return this.repos.filter((repo) => reposPaths.includes(repo.path)).map((repo) => repo.url);
     }
 }

@@ -9,7 +9,7 @@ Item
 
 Flag
   = "--" name:Identifier value:Value? {
-      return { type: "flag", name, value: value ?? null };
+      return { type: "flag", name : "--" + name, value: value ?? null };
     }
 
 
@@ -38,7 +38,7 @@ String
   = '"' chars:[^"]* '"' { return chars.join(""); }
 
 Identifier
-  = [a-zA-Z0-9_]+ { return text(); }
+  = [a-zA-Z0-9_-]+ { return text(); }
 
 _ "whitespace"
   = [ \t\r\n]*

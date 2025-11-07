@@ -14,19 +14,27 @@ type CLIArg = {
     value: string | string[] | null;
 };
 
-type Route<Deps> = {
+type Route<Dependencies extends Record<string, Dependency<any>>, Key extends string> = {
     pattern: string;
-    handler: (ctx: { args: CLIArg[]; deps: Deps; routes: Route<Deps>[] }) => void;
+    handler: (ctx: Context<Dependencies, Key>) => void | any;
 };
 
 type DependencyRecord<Arr extends readonly Dependency<any>[]> = {
     [D in Arr[number] as D["name"]]: D;
 };
 
-type ProgramState<Deps extends Record<string, Dependency<any>>> = {
+type ProgramState<Dependencies extends Record<string, Dependency<any>>> = {
     args: CLIArg[];
-    routes: Route<Deps>[];
-    deps: Deps;
+    routes: Route<Dependencies, string>[];
+    deps: Dependencies;
+};
+
+type Context<Dependencies extends Record<string, Dependency<any>>, Key extends string> = {
+    args: CLIArg[];
+    deps: Dependencies;
+    routes: Route<Dependencies, string>[];
+    kv: Record<string, any>;
+    params: Record<Key, any>;
 };
 
 class Program<Deps extends Record<string, Dependency<any>>> {
@@ -39,8 +47,7 @@ class Program<Deps extends Record<string, Dependency<any>>> {
     private constructor(public state: ProgramState<Deps>) {}
 
     private isMatch(pattern: string): boolean {
-        const normalized = pattern.replace(/^--+/, "");
-        return this.state.args.some((arg) => arg.name === normalized);
+        return this.state.args.some((arg) => arg.name === pattern);
     }
 
     /**
@@ -50,7 +57,7 @@ class Program<Deps extends Record<string, Dependency<any>>> {
      */
     public static create<const InitializedDeps extends readonly Dependency<any>[]>(
         deps: InitializedDeps,
-        routes: Route<DependencyRecord<InitializedDeps>>[] = []
+        routes: Route<DependencyRecord<InitializedDeps>, string>[] = []
     ) {
         const rawArgs = process.argv.slice(2).join(" ");
 
@@ -84,7 +91,8 @@ class Program<Deps extends Record<string, Dependency<any>>> {
         return new Program<Deps & DependencyRecord<NewDeps>>({
             args: this.state.args,
             routes: [...this.state.routes, ...instance.state.routes] as unknown as Route<
-                Deps & DependencyRecord<NewDeps>
+                Deps & DependencyRecord<NewDeps>,
+                string
             >[],
             deps: { ...this.state.deps, ...instance.state.deps } as Deps & DependencyRecord<NewDeps>,
         });
@@ -95,7 +103,7 @@ class Program<Deps extends Record<string, Dependency<any>>> {
      * Add a route to the program
      *
      */
-    public when(pattern: string, handler: (ctx: { args: CLIArg[]; deps: Deps; routes: Route<Deps>[] }) => void): this {
+    public when<T extends string>(pattern: T, handler: (ctx: Context<Deps, T>) => void | any): this {
         this.state.routes.push({ pattern, handler });
         return this;
     }
@@ -106,14 +114,25 @@ class Program<Deps extends Record<string, Dependency<any>>> {
      *
      */
     public run(): void {
+        let kv = {};
         for (const route of this.state.routes) {
             if (this.isMatch(route.pattern)) {
-                const ctx = {
+                const params = this.state.args.reduce((acc, arg) => {
+                    if (arg.type === "param" && arg.value) {
+                        acc[arg.name] = arg.value;
+                    }
+                    return acc;
+                }, {} as Record<string, any>);
+
+                const ctx: Context<Deps, typeof route.pattern> = {
                     args: this.state.args,
                     deps: this.state.deps,
                     routes: this.state.routes,
+                    kv: kv,
+                    params: params as unknown as Record<typeof route.pattern, any>,
                 };
-                route.handler(ctx);
+                const result: ReturnType<typeof route.handler> = route.handler(ctx);
+                if (result) kv = { ...kv, [route.pattern]: result };
             }
         }
     }
