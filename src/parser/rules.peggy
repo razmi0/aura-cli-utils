@@ -38,7 +38,7 @@ String
   = '"' chars:[^"]* '"' { return chars.join(""); }
 
 Identifier
-  = [a-zA-Z0-9_-]+ { return text(); }
+  = [a-zA-Z0-9_./\\-]+ { return text(); }
 
 _ "whitespace"
   = [ \t\r\n]*

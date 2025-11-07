@@ -19,32 +19,63 @@ import { BasicsService, GitRepositoryService } from "./services";
  * ```
  */
 export function createAuraProgram() {
-    return Program.create([new BasicsService(), new GitRepositoryService()])
-        .when("--version", ({ deps }) => {
-            const { log, version } = deps.$;
-            log(version());
-            process.exit(0);
-        })
-        .when("--help", ({ deps, routes }) => {
-            const { log } = deps.$;
-            log("Usage: aura-cli <command>");
-            log("Available commands:");
-            routes.forEach((route) => {
-                log(`  ${route.pattern}`);
-            });
-            process.exit(0);
-        })
-        .when("repos", ({ deps, params }) => {
-            const { log } = deps.$;
-
-            console.log(params);
-            log('No repository provided. Example: aura-cli repos:"[repo1,repo2,repo3]"');
-            process.exit(1);
-        })
-        .when("--clone", ({ kv }) => {
-            console.log(kv);
-            return "can be cloned";
-        });
+    return (
+        Program.create([new BasicsService(), new GitRepositoryService()])
+            /**
+             *
+             * Basics Service
+             *
+             */
+            .when("--version", ({ deps }) => {
+                const { log, version } = deps.$;
+                log(version());
+                process.exit(0);
+            })
+            .when("--help", ({ deps, routes }) => {
+                const { log } = deps.$;
+                log("Usage: aura-cli <command>");
+                log("Available commands:");
+                routes.forEach((route) => {
+                    log(`  ${route.pattern}`);
+                });
+                process.exit(0);
+            })
+            /**
+             *
+             *
+             * Git Repository Service
+             *
+             *
+             */
+            .when("cwd", ({ deps, params }) => {
+                const { repoService } = deps;
+                const path = params.cwd;
+                repoService.setCwd(path);
+            })
+            .when("repos", ({ deps, params }) => {
+                const { repoService } = deps;
+                const paths = params.repos;
+                const urls = repoService.getUrls(paths);
+                return urls;
+            })
+            .when("--clone", async ({ kv, deps }) => {
+                const { repoService } = deps;
+                const urls = kv.repos;
+                await repoService.clone(urls);
+                process.exit(0);
+            })
+            .when("--pull", async ({ kv, deps }) => {
+                const { repoService } = deps;
+                const urls = kv.repos;
+                await repoService.pull(urls);
+                process.exit(0);
+            })
+            .when("--patch-auth", async ({ deps }) => {
+                const { repoService } = deps;
+                await repoService.patchAuth();
+                process.exit(0);
+            })
+    );
 }
 
 // Also export the Program class and services for advanced use cases
