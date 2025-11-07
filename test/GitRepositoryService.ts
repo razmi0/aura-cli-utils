@@ -1,10 +1,10 @@
-import { Service } from "../src";
+import { Service } from "../src/program";
 import type { Branch, Repo, TargetUrl } from "./REPOS";
 
-class GitRepositoryService implements Service {
+class GitRepositoryService implements Service<"repoService"> {
     public repos: Repo[] = [];
 
-    constructor(repoUrls: TargetUrl[], public readonly name: string = "repoService") {
+    constructor(repoUrls: TargetUrl[], public readonly name: "repoService" = "repoService" as const) {
         this.repos = repoUrls.map((repoUrl) => {
             const [url, branch] = repoUrl.split("@");
             const path = url.split("/").pop()?.split(".")[0];
@@ -19,7 +19,7 @@ class GitRepositoryService implements Service {
         });
     }
 
-    public get(path: string): Repo {
+    public find(path: string): Repo {
         const repo = this.repos.find((repo) => repo.path === path);
         if (!repo) {
             throw new Error(`Repository ${path} not found`);

@@ -9,7 +9,8 @@
     },
     "author": "razmiO",
     "scripts": {
-        "dev": "esbuild test/index.ts --bundle --platform=node --target=node20 --format=esm --sourcemap --banner:js='#!/usr/bin/env node' --outfile=./bin/__test.js --watch",
+        "autorun": "node src/autorun.ts",
+        "dev": "esbuild test/index.ts --bundle --platform=node --target=node20 --format=esm --sourcemap --banner:js='#!/usr/bin/env node' --outfile=./bin/__test.js --watch ",
         "build": "npm run build:peg && npm run build:lib",
         "build:peg": "peggy -o src/parser/index.ts --format es src/parser/rules.peggy",
         "build:lib": "esbuild src/index.ts --bundle --minify --platform=node --target=node20 --format=esm --banner:js='#!/usr/bin/env node' --outfile=./bin/aura.js"
