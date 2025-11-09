@@ -49,12 +49,12 @@ export function createAuraProgram() {
              */
             .when("cwd", ({ deps, params }) => {
                 const { repoService } = deps;
-                const path = params.cwd;
+                const path = params.cwd as string;
                 repoService.setCwd(path);
             })
             .when("repos", ({ deps, params }) => {
                 const { repoService } = deps;
-                const paths = params.repos;
+                const paths = params.repos as string[];
                 const urls = repoService.getUrls(paths);
                 return urls;
             })
