@@ -131,19 +131,19 @@ export default class GitRepositoryService implements ProgramPort<"repoService"> 
         const hookPath = `${path}/.git/hooks/prepare-commit-msg`;
         console.log(`Writing commit message hook to ${hookPath}`);
         const hookContent = `#!/bin/bash
-# .git/hooks/prepare-commit-msg
+        # .git/hooks/prepare-commit-msg
 
-# Get current branch name
-BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null)
+        # Get current branch name
+        BRANCH_NAME=$(git symbolic-ref --short HEAD 2>/dev/null)
 
-# Only auto-generate commit message on main branch
-if [ "$BRANCH_NAME" = "main" ]; then
-  # Get current date in DD/MM/YYYY format
-  DATE=$(date +"%d/%m/%Y")
-  
-  # Overwrite commit message with checkpoint format
-  echo "checkpoint:$DATE" > "$1"
-fi
+        # Only auto-generate commit message on main branch
+        if [ "$BRANCH_NAME" = "main" ]; then
+        # Get current date in DD/MM/YYYY format
+        DATE=$(date +"%d/%m/%Y")
+        
+        # Overwrite commit message with checkpoint format
+        echo "checkpoint:$DATE" > "$1"
+        fi
         `;
         try {
             await writeFile(hookPath, hookContent, { encoding: "utf-8" });
@@ -156,4 +156,3 @@ fi
         }
     }
 }
-// Use a prepare-commit-msg hook that generates checkpoint:DD/MM/YYYY and only runs on main:
