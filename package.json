@@ -13,7 +13,7 @@
         "build": "npm run build:peg && npm run build:lib && npm run build:cli",
         "build:peg": "peggy -o src/parser/index.ts --format es src/parser/rules.peggy",
         "build:lib": "esbuild src/index.ts --bundle --minify --platform=node --target=node20 --format=esm --sourcemap --outfile=./bin/index.js",
-        "build:cli": "esbuild src/cli.ts --bundle --minify --platform=node --target=node20 --format=esm --sourcemap --banner:js='#!/usr/bin/env node' --outfile=./bin/aura.js"
+        "build:cli": "esbuild src/cli.ts --bundle --minify --platform=node --target=node20 --format=esm --sourcemap --banner:js=\"#!/usr/bin/env node\" --outfile=./bin/aura.js"
     },
     "keywords": [
         "aura",

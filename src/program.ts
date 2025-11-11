@@ -17,6 +17,7 @@ type CLIArg = {
 type Route<Dependencies extends Record<string, Dependency<any>>, Key extends string> = {
     pattern: string;
     handler: (ctx: Context<Dependencies, Key>) => void | any;
+    description?: string;
 };
 
 type DependencyRecord<Arr extends readonly Dependency<any>[]> = {
@@ -40,7 +41,7 @@ type Context<Dependencies extends Record<string, Dependency<any>>, Key extends s
 class Program<Deps extends Record<string, Dependency<any>>> {
     /**
      *
-     * Constructor is set to private => static factory method Program.create() (sorry....)
+     * Constructor is set to private => static factory method Program.create() (sorry....) NOT SINGLETON
      * This maintain type inference for dependencies and routes (no explicit return type in constructor)
      *
      */
@@ -103,38 +104,53 @@ class Program<Deps extends Record<string, Dependency<any>>> {
      * Add a route to the program
      *
      */
-    public when<T extends string>(pattern: T, handler: (ctx: Context<Deps, T>) => void | any): this {
-        this.state.routes.push({ pattern, handler });
+    public when<T extends string>(
+        pattern: T,
+        handler: (ctx: Context<Deps, T>) => void | any,
+        description?: string
+    ): this {
+        this.state.routes.push({ pattern, handler, description: description || "" });
         return this;
     }
 
     /**
-     *
      * Run the program
-     *
      */
-    public run(): void {
-        let kv = {};
+    public async run(): Promise<void> {
+        let kv: Record<string, any> = {};
         let params: Record<string, any> = {};
+        let found = false;
 
         this.state.args.forEach((arg) => {
             if (arg.type === "param" && arg.value) {
-                params[arg.name as keyof typeof params] = arg.value;
+                params[arg.name] = arg.value;
             }
         });
 
-        for (const route of this.state.routes) {
-            if (this.isMatch(route.pattern)) {
-                const ctx: Context<Deps, typeof route.pattern> = {
-                    args: this.state.args,
-                    deps: this.state.deps,
-                    routes: this.state.routes,
-                    kv: kv,
-                    params,
-                };
-                const result: ReturnType<typeof route.handler> = route.handler(ctx);
-                if (result) kv = { ...kv, [route.pattern]: result };
+        try {
+            for (const route of this.state.routes) {
+                if (this.isMatch(route.pattern)) {
+                    found = true;
+                    const ctx: Context<Deps, typeof route.pattern> = {
+                        args: this.state.args,
+                        deps: this.state.deps,
+                        routes: this.state.routes,
+                        kv: kv,
+                        params,
+                    };
+
+                    // Await the handler in case it's async
+                    const result = await route.handler(ctx);
+                    if (result !== undefined) {
+                        kv = { ...kv, [route.pattern]: result };
+                    }
+                }
             }
+            if (!found) {
+                throw new Error("No route found for the given arguments <3, try --help");
+            }
+        } catch (error) {
+            throw new Error(error instanceof Error ? error.message : String(error));
         }
     }
 }

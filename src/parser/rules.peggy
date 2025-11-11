@@ -22,7 +22,7 @@ Value
   = ":" part:DynamicPart { return part; }
 
 DynamicPart
-  = Array / String / Identifier
+  = Array / String / Number / Identifier
 
 
 Array
@@ -31,8 +31,10 @@ Array
     }
 
 ArrayItem
-  = String / Identifier
+  = DynamicPart
 
+Number "number"
+  = digits:[0-9]+ { return parseInt(digits.join(""), 10); }
 
 String
   = '"' chars:[^"]* '"' { return chars.join(""); }

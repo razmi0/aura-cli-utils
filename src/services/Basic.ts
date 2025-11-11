@@ -39,4 +39,15 @@ export default class BasicsService implements ProgramPort<"$"> {
         console.log(`\x1b[92m[${origin ? origin : "AURA"}]\x1b[0m\x1b[90m[${version}]\x1b[0m ${message}`);
         // darkgrey : \x1b[90m
     };
+
+    /** Changes current working directory to specified path. */
+    public setCwd(path: string): boolean {
+        try {
+            process.chdir(path);
+            return true;
+        } catch (error) {
+            console.error(`Failed setting cwd to ${path}`);
+            return false;
+        }
+    }
 }
